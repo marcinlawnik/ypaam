@@ -139,4 +139,4 @@ echo '</body></html>';
 // Save processed data to file
 $filename = $storageDir . 'ypaam_scrape_' . date('Y_m_d_H_i_s') . '.json';
 
-file_put_contents($filename, json_encode($posts, JSON_PRETTY_PRINT));
+file_put_contents($filename, json_encode($posts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
