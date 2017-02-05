@@ -1,6 +1,13 @@
 <?php
 
 $startUrl = 'https://www.reddit.com/user/Your_Post_As_A_Movie.json';
+
+// Process next page
+
+if(isset($_GET['after'])) {
+    $startUrl .= '?after=' . $_GET['after'];
+}
+
 $storageDir = __DIR__ . '/storage/';
 
 // Array containing data extracted from posts
@@ -133,10 +140,19 @@ foreach ($array['data']['children'] as $comment) {
      echo process($comment['data']);
      $posts[] = processJson($comment['data']);
 }
+//Add link to next page
+
+echo '<a href="list.php?after=' . $nextPageId . '">Next page </a>';
+
 echo '</body></html>';
 
 
 // Save processed data to file
-$filename = $storageDir . 'ypaam_scrape_' . date('Y_m_d_H_i_s') . '.json';
+$filename = $storageDir . 'ypaam_scrape_' . date('Y_m_d_H_i_s_') . $nextPageId . '.json';
 
-file_put_contents($filename, json_encode($posts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+$output = [
+    'posts' => $posts,
+    'after' => $nextPageId
+];
+
+file_put_contents($filename, json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
