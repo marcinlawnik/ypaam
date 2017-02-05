@@ -1,6 +1,7 @@
 <?php
 
 $startUrl = 'https://www.reddit.com/user/Your_Post_As_A_Movie.json';
+$storageDir = __DIR__ . '/storage/';
 
 // Array containing data extracted from posts
 $posts = [];
@@ -47,6 +48,10 @@ function get_web_page( $url )
 
 $content = get_web_page($startUrl);
 
+// Save content to file
+
+
+
 $array = json_decode($content['content'], true);
 
 function convert_imgur_link($link) {
@@ -60,6 +65,33 @@ function convert_imgur_link($link) {
     return $link;
 
 }
+
+function processJSON($comment) {
+    $out = $comment['body'];
+
+    $startsAt = strpos($out, "[") + strlen("[");
+    $endsAt = strpos($out, "]", $startsAt);
+
+    $photoshopText = substr($out, $startsAt, $endsAt - $startsAt);
+    $startsAt = strpos($out, "(") + strlen("(");
+    $endsAt = strpos($out, ")", $startsAt);
+    $photoshopLink = substr($out, $startsAt, $endsAt - $startsAt);
+    $linkUrl = convert_imgur_link($comment['link_url']);
+
+    $post = [
+        'link_author' => $comment['link_author'],
+        'link_url' => $comment['link_url'],
+        'link_url_converted' => $linkUrl,
+        'link_title' => $comment['link_title'],
+        'comment_body' => $comment['body'],
+        'photoshop_link' => $photoshopLink,
+        'photoshop_text' => $photoshopText
+    ];
+    return $post;
+
+}
+
+
 function process ($comment) {
     $out = $comment['body'];
 
@@ -81,6 +113,7 @@ function process ($comment) {
         'photoshop_link' => $photoshopLink,
         'photoshop_text' => $photoshopText
     ];
+
     $html = '<tr>';
 
     $html .= '<div id="left_col"><td>Oryginalny obraz:'. $comment['link_title'] .'<br> <img src="'. $linkUrl .'" width="200px"></td></div>';
@@ -90,28 +123,20 @@ function process ($comment) {
 
     return $html;
 }
-echo '<html><head>
-<style type="text/css">
-#wrap {
-   width:600px;
-   margin:0 auto;
-}
-#left_col {
-   float:left;
-   width:300px;
-}
-#right_col {
-   float:right;
-   width:300px;
-}
-</style>
-</head><body><table>
-';
+
+echo '<html><head></head><body><table>';
 
 // Save next page identifier
 
 $nextPageId = $array['data']['after'];
 foreach ($array['data']['children'] as $comment) {
      echo process($comment['data']);
+     $posts[] = processJson($comment['data']);
 }
 echo '</body></html>';
+
+
+// Save processed data to file
+$filename = $storageDir . 'ypaam_scrape_' . date('Y_m_d_H_i_s') . '.json';
+
+file_put_contents($filename, json_encode($posts, JSON_PRETTY_PRINT));
